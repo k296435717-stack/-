@@ -50,6 +50,9 @@ tool --help
 # 执行内置任务
 tool run build
 
+# 试玩小游戏
+tool game
+
 # 指定配置文件
 tool --config ./config.yaml run sync
 

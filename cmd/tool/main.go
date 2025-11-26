@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -79,6 +82,9 @@ func main() {
 			os.Exit(1)
 		}
 		return
+	case "game":
+		playGuessingGame()
+		return
 	default:
 		logError(nil, "unknown command: "+cmd)
 		printHelp()
@@ -106,9 +112,11 @@ func printHelp() {
 	help := `tool ` + version + `
 用法:
   tool run <task> [选项]
+  tool game            运行猜数字小游戏
 
 命令:
   run         运行指定任务 (build, status)
+  game        启动简单的猜数字游戏
 
 选项:
   --config    指定配置文件 (默认: tool.yaml)
@@ -143,4 +151,54 @@ func expandPath(p string) string {
 		return filepath.Join(h, strings.TrimPrefix(p, "~"))
 	}
 	return p
+}
+
+func playGuessingGame() {
+	rand.Seed(time.Now().UnixNano())
+	target := rand.Intn(100) + 1
+	reader := bufio.NewReader(os.Stdin)
+	attempts := 0
+
+	fmt.Println("🎲 猜数字游戏：请在 1 到 100 之间猜一个数字！")
+	fmt.Println("输入 quit 退出游戏。最多 10 次尝试。")
+
+	for {
+		fmt.Print("请输入你的猜测: ")
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			logError(nil, "读取输入失败")
+			return
+		}
+
+		guessText := strings.TrimSpace(line)
+		if strings.EqualFold(guessText, "quit") {
+			fmt.Println("游戏结束，下次再来！")
+			return
+		}
+		if guessText == "" {
+			fmt.Println("请输入一个数字。")
+			continue
+		}
+
+		guess, err := strconv.Atoi(guessText)
+		if err != nil {
+			fmt.Println("请输入有效的数字。")
+			continue
+		}
+
+		attempts++
+		if guess < target {
+			fmt.Println("太小了，再试试。")
+		} else if guess > target {
+			fmt.Println("太大了，再试试。")
+		} else {
+			fmt.Printf("恭喜！你在 %d 次尝试内猜中了数字 %d！\n", attempts, target)
+			return
+		}
+
+		if attempts >= 10 {
+			fmt.Printf("达到最大尝试次数，正确答案是 %d。\n", target)
+			return
+		}
+	}
 }
